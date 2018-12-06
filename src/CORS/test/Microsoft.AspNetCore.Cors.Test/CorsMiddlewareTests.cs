@@ -8,8 +8,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Endpoints;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
@@ -562,6 +564,50 @@ namespace Microsoft.AspNetCore.Cors.Infrastructure
                         Assert.Equal("AllowedHeader", Assert.Single(kvp.Value));
                     });
             }
+        }
+
+        [Fact]
+        public void ResolveCorsPolicyName_NoEndpoint_UseDefaultPolicyName()
+        {
+            // Arrange
+            var middleware = new CorsMiddleware(c => Task.CompletedTask, Mock.Of<ICorsService>(), Mock.Of<ILoggerFactory>(), "DefaultPolicyName");
+            var context = new DefaultHttpContext();
+
+            // Act
+            var resolvedPolicyName = middleware.ResolveCorsPolicyName(context);
+
+            // Assert
+            Assert.Equal("DefaultPolicyName", resolvedPolicyName);
+        }
+
+        [Fact]
+        public void ResolveCorsPolicyName_EndpointWithoutMetadata_UseDefaultPolicyName()
+        {
+            // Arrange
+            var middleware = new CorsMiddleware(c => Task.CompletedTask, Mock.Of<ICorsService>(), Mock.Of<ILoggerFactory>(), "DefaultPolicyName");
+            var context = new DefaultHttpContext();
+            context.SetEndpoint(new Endpoint(c => Task.CompletedTask, EndpointMetadataCollection.Empty, "Test endpoint"));
+
+            // Act
+            var resolvedPolicyName = middleware.ResolveCorsPolicyName(context);
+
+            // Assert
+            Assert.Equal("DefaultPolicyName", resolvedPolicyName);
+        }
+
+        [Fact]
+        public void ResolveCorsPolicyName_EndpointWithMetadata_UseDefaultPolicyName()
+        {
+            // Arrange
+            var middleware = new CorsMiddleware(c => Task.CompletedTask, Mock.Of<ICorsService>(), Mock.Of<ILoggerFactory>(), "DefaultPolicyName");
+            var context = new DefaultHttpContext();
+            context.SetEndpoint(new Endpoint(c => Task.CompletedTask, new EndpointMetadataCollection(new EnableCorsAttribute("MetadataPolicyName")), "Test endpoint"));
+
+            // Act
+            var resolvedPolicyName = middleware.ResolveCorsPolicyName(context);
+
+            // Assert
+            Assert.Equal("MetadataPolicyName", resolvedPolicyName);
         }
     }
 }

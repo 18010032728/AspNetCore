@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cors.Internal;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Endpoints;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -124,7 +125,7 @@ namespace Microsoft.AspNetCore.Cors.Infrastructure
 
         private async Task InvokeCore(HttpContext context, ICorsPolicyProvider corsPolicyProvider)
         {
-            var corsPolicy = _policy ?? await corsPolicyProvider.GetPolicyAsync(context, _corsPolicyName);
+            var corsPolicy = _policy ?? await corsPolicyProvider.GetPolicyAsync(context, ResolveCorsPolicyName(context));
             if (corsPolicy == null)
             {
                 Logger?.NoCorsPolicyFound();
@@ -147,6 +148,12 @@ namespace Microsoft.AspNetCore.Cors.Infrastructure
                 context.Response.OnStarting(OnResponseStartingDelegate, Tuple.Create(this, context, corsResult));
                 await _next(context);
             }
+        }
+
+        internal string ResolveCorsPolicyName(HttpContext context)
+        {
+            var endpoint = context.GetEndpoint();
+            return endpoint?.Metadata.GetMetadata<IEnableCorsAttribute>()?.PolicyName ?? _corsPolicyName;
         }
 
         private static Task OnResponseStarting(object state)
