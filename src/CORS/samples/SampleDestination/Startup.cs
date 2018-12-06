@@ -14,11 +14,11 @@ namespace SampleDestination
     public class Startup
     {
         private static readonly string DefaultAllowedOrigin = $"http://{Dns.GetHostName()}:9001";
-        private readonly ILogger<StartupWithoutEndpointRouting> _logger;
+        private readonly ILogger<Startup> _logger;
 
         public Startup(ILoggerFactory loggerFactory)
         {
-            _logger = loggerFactory.CreateLogger<StartupWithoutEndpointRouting>();
+            _logger = loggerFactory.CreateLogger<Startup>();
             _logger.LogInformation($"Setting up CORS middleware to allow clients on {DefaultAllowedOrigin}");
         }
 
